@@ -1,0 +1,27 @@
+global
+  maxconn 1024 
+  daemon
+  pidfile <%= @pidfile_path %>
+
+defaults
+  mode http
+  maxconn 1024
+  option  httplog
+  option  dontlognull
+  retries 3
+  timeout connect 5s
+  timeout client 60s
+  timeout server 60s
+
+frontend rotating_proxies
+  bind *:<%= @port %>
+  default_backend tor
+  option http_proxy
+
+backend tor
+  option http_proxy
+  balance leastconn # http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#balance
+
+  <% @backends.each do |b| %>
+  server <%= b[:name] %><%= b[:port] %> <%= b[:addr] %>:<%= b[:port] %>
+  <% end %>

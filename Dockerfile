@@ -3,7 +3,8 @@ MAINTAINER Matthias Kadenbach <matthias.kadenbach@gmail.com>
 
 RUN apt-get update
 # RUN apt-get upgrade -y
-RUN apt-get install wget -y
+RUN apt-get install libssl-dev wget curl ruby1.9.3 -y
+RUN ln -s /lib/x86_64-linux-gnu/libssl.so.1.0.0 /lib/libssl.so.1.0.0
 
 # Tor
 RUN echo 'deb http://deb.torproject.org/torproject.org precise main' | tee /etc/apt/sources.list.d/torproject.list
@@ -17,8 +18,19 @@ RUN update-rc.d -f tor remove
 # DeleGate
 RUN wget -P /tmp http://www.delegate.org/anonftp/DeleGate/bin/linux/9.9.7/fc6_64-dg.gz
 RUN gunzip /tmp/fc6_64-dg.gz
-RUN mv /tmp/fc6_64-dg /usr/bin/delegated
-RUN chmod +x /usr/bin/delegated
+RUN mv /tmp/fc6_64-dg /usr/local/bin/delegated
+RUN chmod +x /usr/local/bin/delegated
 
 # HAproxy
 RUN apt-get install haproxy -y
+
+EXPOSE 5566
+
+ADD usr/local/etc/haproxy.cfg.erb /usr/local/etc/haproxy.cfg.erb
+
+ADD usr/local/bin/start.rb /usr/local/bin/start.rb
+RUN chmod +x /usr/local/bin/start.rb
+RUN apt-get install build-essential -y
+RUN gem install eventmachine
+CMD ["/usr/local/bin/start.rb"]
+
