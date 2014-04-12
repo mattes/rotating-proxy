@@ -4,7 +4,9 @@ docker-rotating-proxies
 ```
                Docker Container
                -----------------------------------------
-Client <---->  HAproxy <-> Tor Proxy 1, Tor Proxy 2, ...
+Client <---->  HAproxy <-> Tor Proxy 1
+                           Tor Proxy 2
+                           Tor Proxy n
 ```
 
 __Why:__ Lots of IP addresses. One single endpoint for your client.
