@@ -132,7 +132,8 @@ end
 h = Service::Haproxy.new
 
 port = 10000
-25.times.each do 
+tor_instances = ENV['tors'] || 10
+tor_instances.to_i.times.each do 
   t = Service::Tor.new(port)
   h.add_tor('127.0.0.1', t.delegated_port)
   t.start  
