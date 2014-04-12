@@ -24,7 +24,7 @@ docker pull mattes/rotating-proxies:latest
 
 # debug docker container
 docker run -v $(pwd):/home -p 5566:5566 -i -t --env tors=25 mattes/rotating-proxies /bin/bash
-source <(curl -Ls git.io/apeepg)
+source <(curl -Ls git.io/apeepg) # inject dotfiles
 
 # start docker container
 docker run -d -p 5566:5566 --env tors=25 mattes/rotating-proxies
