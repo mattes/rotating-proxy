@@ -3,7 +3,7 @@ docker-rotating-proxies
 
 ```
                Docker Container
-               -----------------------------------------
+               -----------------------
 Client <---->  HAproxy <-> Tor Proxy 1
                            Tor Proxy 2
                            Tor Proxy n
