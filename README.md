@@ -1,10 +1,22 @@
 docker-rotating-proxies
 =======================
 
+```
+               Docker Container
+               -----------------------------------------
+Client <---->  HAproxy <-> Tor Proxy 1, Tor Proxy 2, ...
+```
+
+__Why:__ Lots of IP addresses. One single endpoint for your client.
+Load-balancing by HAproxy.
+
 
 ```bash
 # build docker container
 docker build -t mattes/rotating-proxies:latest .
+
+# ... or pull docker container
+docker pull mattes/rotating-proxies:latest
 
 # debug docker container
 docker run -v $(pwd):/home -p 5566:5566 -i -t mattes/rotating-proxies /bin/bash
