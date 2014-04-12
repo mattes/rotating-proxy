@@ -33,3 +33,8 @@ curl --proxy 127.0.0.1:5566 http://header.jsontest.com
 ```
 
 
+Please note: Tor offers a SOCKS Proxy only. In order to allow communication
+from HAproxy to Tor, [delegated](http://www.delegate.org/delegate/) 
+is used to translate from HTTP proxy to SOCKS proxy.
+HAproxy is able to talk to HTTP proxies only.
+
