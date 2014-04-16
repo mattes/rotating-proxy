@@ -32,21 +32,19 @@ module Service
 
 
   class Tor < Base
-    attr_reader :port, :delegated_port
+    attr_reader :port, :polipo_port
 
     def initialize(port)
       @exec = self.class.which('tor')
-      @delegated_exec = self.class.which('delegated')
       @polipo_exec = self.class.which('polipo')
       @port = port
       @tor_port = @port
-      @delegated_port = @port + 10000
+      @polipo_port = @port + 10000
     end
 
     def start
       Dir.mkdir("/var/lib/tor") unless Dir.exists?("/var/lib/tor")
       Dir.mkdir("/var/run/tor") unless Dir.exists?("/var/run/tor")
-      Dir.mkdir("/var/log/tor") unless Dir.exists?("/var/log/tor")
       self.class.fire_and_forget(@exec,
         "--SocksPort #{@tor_port}",
         "--NewCircuitPeriod 120",
@@ -54,29 +52,13 @@ module Service
         "--PidFile /var/run/tor/#{@tor_port}.pid",
         "--Log \"warn syslog\"",
         '--RunAsDaemon 1',
-        "| logger 2>&1")
+        "| logger -t 'tor' 2>&1")
 
-      # polipo proxyPort=9080 socksParentProxy=127.0.0.1:9050 socksProxyType=socks5 diskCacheRoot="" disableLocalInterface=true allowedClients=127.0.0.1 localDocumentRoot="" disableConfiguration=true dnsUseGethostbyname="yes" disableVia = true
 
-      Dir.mkdir("/var/lib/delegated") unless Dir.exists?("/var/lib/delegated")
-      Dir.mkdir("/var/run/delegated") unless Dir.exists?("/var/run/delegated")
-      Dir.mkdir("/var/log/delegated") unless Dir.exists?("/var/log/delegated")
-      # self.class.fire_and_forget(@delegated_exec,
-      #   "-P#{@delegated_port}",
-      #   "SERVER=http",
-      #   "DGROOT=/var/lib/delegated/#{@delegated_port}",
-      #   "SOCKS=127.0.0.1:#{@tor_port}",
-      #   "PIDFILE=/var/run/delegated/#{@delegated_port}.pid",
-      #   "LOGFILE=/var/log/delegated/#{@delegated_port}.log",
-      #   "ADMIN=example@example.com",
-      #   "DYLIB='+,lib*.so.X.Y.Z'",
-      #   "HTTPCONF=kill-qhead:Via",
-      #   "OWNER=root/root",
-      #   "| logger 2>&1")
-      
       # https://gitweb.torproject.org/torbrowser.git/blob_plain/1ffcd9dafb9dd76c3a29dd686e05a71a95599fb5:/build-scripts/config/polipo.conf
+      Dir.mkdir("/var/run/polipo") unless Dir.exists?("/var/run/polipo")
       self.class.fire_and_forget(@polipo_exec,
-        "proxyPort=#{@delegated_port}",
+        "proxyPort=#{@polipo_port}",
         "socksParentProxy=127.0.0.1:#{@tor_port}",
         "socksProxyType=socks5", 
         "diskCacheRoot=''",
@@ -87,9 +69,9 @@ module Service
         "dnsUseGethostbyname='yes'",
         "logSyslog=true",
         "daemonise=true",
-        "pidFile=/var/run/delegated/#{@delegated_port}.pid",
+        "pidFile=/var/run/polipo/#{@polipo_port}.pid",
         "disableVia=true",
-        "| logger 2>&1")
+        "| logger -t 'polipo' 2>&1")
     end
 
     def stop
@@ -98,9 +80,9 @@ module Service
         self.class.kill(tor_pid)
       end
 
-      if File.exists?("/var/run/delegated/#{@delegated_port}.pid")
-        delegated_pid = IO.read("/var/run/delegated/#{@delegated_port}.pid").strip()
-        self.class.kill(delegated_pid)
+      if File.exists?("/var/run/polipo/#{@polipo_port}.pid")
+        polipo_pid = IO.read("/var/run/polipo/#{@polipo_port}.pid").strip()
+        self.class.kill(polipo_pid)
       end
     end
 
@@ -128,7 +110,8 @@ module Service
       self.class.fire_and_forget(@exec, 
         "-f #{@config_path}",
         "-p #{@pidfile_path}",
-        "-sf #{IO.read(@pidfile_path)}")
+        "-sf #{IO.read(@pidfile_path)}",
+        "| logger 2>&1")
     end
 
     def kill
@@ -155,7 +138,7 @@ port = 10000
 tor_instances = ENV['tors'] || 10
 tor_instances.to_i.times.each do 
   t = Service::Tor.new(port)
-  h.add_tor('127.0.0.1', t.delegated_port)
+  h.add_tor('127.0.0.1', t.polipo_port)
   t.start  
   port += 1
 end
