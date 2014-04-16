@@ -37,6 +37,7 @@ module Service
     def initialize(port)
       @exec = self.class.which('tor')
       @delegated_exec = self.class.which('delegated')
+      @polipo_exec = self.class.which('polipo')
       @port = port
       @tor_port = @port
       @delegated_port = @port + 10000
@@ -51,25 +52,44 @@ module Service
         "--NewCircuitPeriod 120",
         "--DataDirectory /var/lib/tor/#{@tor_port}",
         "--PidFile /var/run/tor/#{@tor_port}.pid",
-        "--Log \"warn file /var/log/tor/#{@tor_port}.log\"",
+        "--Log \"warn syslog\"",
         '--RunAsDaemon 1',
-        "> /var/log/tor/#{@tor_port}.log 2>&1")
+        "| logger 2>&1")
+
+      # polipo proxyPort=9080 socksParentProxy=127.0.0.1:9050 socksProxyType=socks5 diskCacheRoot="" disableLocalInterface=true allowedClients=127.0.0.1 localDocumentRoot="" disableConfiguration=true dnsUseGethostbyname="yes" disableVia = true
 
       Dir.mkdir("/var/lib/delegated") unless Dir.exists?("/var/lib/delegated")
       Dir.mkdir("/var/run/delegated") unless Dir.exists?("/var/run/delegated")
       Dir.mkdir("/var/log/delegated") unless Dir.exists?("/var/log/delegated")
-      self.class.fire_and_forget(@delegated_exec,
-        "-P#{@delegated_port}",
-        "SERVER=http",
-        "DGROOT=/var/lib/delegated/#{@delegated_port}",
-        "SOCKS=127.0.0.1:#{@tor_port}",
-        "PIDFILE=/var/run/delegated/#{@delegated_port}.pid",
-        "LOGFILE=/var/log/delegated/#{@delegated_port}.log",
-        "ADMIN=example@example.com",
-        "DYLIB='+,lib*.so.X.Y.Z'",
-        "HTTPCONF=kill-qhead:Via",
-        "OWNER=root/root",
-        "> /var/log/delegated/#{@delegated_port}.log 2>&1")
+      # self.class.fire_and_forget(@delegated_exec,
+      #   "-P#{@delegated_port}",
+      #   "SERVER=http",
+      #   "DGROOT=/var/lib/delegated/#{@delegated_port}",
+      #   "SOCKS=127.0.0.1:#{@tor_port}",
+      #   "PIDFILE=/var/run/delegated/#{@delegated_port}.pid",
+      #   "LOGFILE=/var/log/delegated/#{@delegated_port}.log",
+      #   "ADMIN=example@example.com",
+      #   "DYLIB='+,lib*.so.X.Y.Z'",
+      #   "HTTPCONF=kill-qhead:Via",
+      #   "OWNER=root/root",
+      #   "| logger 2>&1")
+      
+      # https://gitweb.torproject.org/torbrowser.git/blob_plain/1ffcd9dafb9dd76c3a29dd686e05a71a95599fb5:/build-scripts/config/polipo.conf
+      self.class.fire_and_forget(@polipo_exec,
+        "proxyPort=#{@delegated_port}",
+        "socksParentProxy=127.0.0.1:#{@tor_port}",
+        "socksProxyType=socks5", 
+        "diskCacheRoot=''",
+        "disableLocalInterface=true",
+        "allowedClients=127.0.0.1",
+        "localDocumentRoot=''", 
+        "disableConfiguration=true",
+        "dnsUseGethostbyname='yes'",
+        "logSyslog=true",
+        "daemonise=true",
+        "pidFile=/var/run/delegated/#{@delegated_port}.pid",
+        "disableVia=true",
+        "| logger 2>&1")
     end
 
     def stop
@@ -101,7 +121,7 @@ module Service
       compile_config
       self.class.fire_and_forget(@exec, 
         "-f #{@config_path}", 
-        "> /var/log/haproxy.log 2>&1")
+        "| logger 2>&1")
     end
 
     def soft_reload
@@ -150,6 +170,6 @@ EM.run do
   # end
 
   # ... 
-  # @todo tor auto start and close depending on memory size and cpu usage
+  # @todo tor auto start and close depending on memory size and cpu usage?
 end
 

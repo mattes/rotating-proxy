@@ -16,10 +16,14 @@ RUN service tor stop
 RUN update-rc.d -f tor remove
 
 # DeleGate
-RUN wget -P /tmp http://www.delegate.org/anonftp/DeleGate/bin/linux/9.9.7/fc6_64-dg.gz
-RUN gunzip /tmp/fc6_64-dg.gz
-RUN mv /tmp/fc6_64-dg /usr/local/bin/delegated
-RUN chmod +x /usr/local/bin/delegated
+# RUN wget -P /tmp http://www.delegate.org/anonftp/DeleGate/bin/linux/9.9.7/fc6_64-dg.gz
+# RUN gunzip /tmp/fc6_64-dg.gz
+# RUN mv /tmp/fc6_64-dg /usr/local/bin/delegated
+# RUN chmod +x /usr/local/bin/delegated
+
+# Polipo
+RUN apt-get install polipo -y
+RUN update-rc.d -f polipo remove
 
 # HAproxy
 RUN apt-get install haproxy -y
