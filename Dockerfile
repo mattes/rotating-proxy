@@ -9,7 +9,7 @@ RUN ln -s /lib/x86_64-linux-gnu/libssl.so.1.0.0 /lib/libssl.so.1.0.0
 # Tor
 RUN echo 'deb http://deb.torproject.org/torproject.org precise main' | tee /etc/apt/sources.list.d/torproject.list
 RUN gpg --keyserver keys.gnupg.net --recv 886DDD89
-RUN gpg --export A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89 | sudo apt-key add -
+RUN gpg --export A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89 | apt-key add -
 RUN apt-get update
 RUN apt-get install tor -y
 RUN service tor stop

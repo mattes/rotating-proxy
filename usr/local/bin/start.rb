@@ -71,6 +71,8 @@ module Service
         "daemonise=true",
         "pidFile=/var/run/polipo/#{@polipo_port}.pid",
         "disableVia=true",
+        "allowedPorts='1-65535'",
+        "tunnelAllowedPorts='1-65535'",
         "| logger -t 'polipo' 2>&1")
     end
 
