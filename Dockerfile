@@ -30,5 +30,5 @@ ADD usr/local/bin/start.rb /usr/local/bin/start.rb
 RUN chmod +x /usr/local/bin/start.rb
 RUN apt-get install build-essential -y
 RUN gem install eventmachine
-CMD /usr/local/bin/start.rb
 
+CMD /usr/local/bin/start.rb
