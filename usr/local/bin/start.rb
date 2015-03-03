@@ -45,7 +45,11 @@ module Service
       $logger.info "stopping #{service_name} on port #{port}"
       if File.exists?(pid_file)
         pid = File.read(pid_file).strip
-        self.class.kill(pid)
+        begin
+          self.class.kill(pid)
+        rescue => e
+          $logger.warn "couldn't kill #{service_name} on port #{port}: #{e.message}"
+        end
       else
         $logger.info "#{service_name} on port #{port} was not running"
       end
@@ -151,6 +155,12 @@ module Service
       @polipo.stop
     end
 
+    def restart
+      stop
+      sleep 5
+      start
+    end
+
     def tor_port
       10000 + id
     end
@@ -159,6 +169,16 @@ module Service
       tor_port + 10000
     end
     alias_method :port, :polipo_port
+
+    def test_url
+      ENV['test_url'] || 'http://echoip.com'
+    end
+
+    def working?
+      Excon.get(test_url, proxy: "http://127.0.0.1:#{port}").status == 200
+    rescue
+      false
+    end
   end
 
   class Haproxy < Base
@@ -200,16 +220,23 @@ end
 
 
 haproxy = Service::Haproxy.new
+proxies = []
 
 tor_instances = ENV['tors'] || 10
 tor_instances.to_i.times.each do |id|
   proxy = Service::Proxy.new(id)
   haproxy.add_backend(proxy)
   proxy.start
+  proxies << proxy
 end
 
 haproxy.start
 
+sleep 60
 loop do
-  sleep 3600
+  proxies.each do |proxy|
+    $logger.info "testing proxy #{proxy.id} (port #{proxy.port})"
+    proxy.restart unless proxy.working?
+  end
+  sleep 1800
 end
