@@ -3,7 +3,7 @@ require 'erb'
 require 'excon'
 require 'logger'
 
-$logger = Logger.new(STDOUT, Logger::DEBUG)
+$logger = Logger.new(STDOUT, ENV['DEBUG'] ? Logger::DEBUG : Logger::INFO)
 
 module Service
   class Base
@@ -233,10 +233,14 @@ end
 haproxy.start
 
 sleep 60
+
 loop do
+  $logger.info "testing proxies"
   proxies.each do |proxy|
     $logger.info "testing proxy #{proxy.id} (port #{proxy.port})"
     proxy.restart unless proxy.working?
   end
+
+  $logger.info "sleeping for 1800 seconds"
   sleep 1800
 end
