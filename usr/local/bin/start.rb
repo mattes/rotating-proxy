@@ -80,7 +80,7 @@ module Service
 
   class Tor < Base
     def data_directory
-      "#{super}/#{pid}"
+      "#{super}/#{port}"
     end
 
     def start
