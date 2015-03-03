@@ -4,7 +4,7 @@ MAINTAINER Matthias Kadenbach <matthias.kadenbach@gmail.com>
 RUN apt-get update
 RUN apt-get upgrade -y
 RUN apt-get install libssl-dev wget curl -y
-RUN apt-get install build-essential zlib1g-dev libyaml-dev libssl-dev libgdbm-dev libreadline-dev libncurses5-dev libffi-dev
+RUN apt-get install build-essential zlib1g-dev libyaml-dev libssl-dev -y
 RUN ln -s /lib/x86_64-linux-gnu/libssl.so.1.0.0 /lib/libssl.so.1.0.0
 
 # Tor
