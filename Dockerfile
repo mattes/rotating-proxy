@@ -28,7 +28,7 @@ RUN update-rc.d -f polipo remove
 
 EXPOSE 5566
 
-RUN gem install eventmachine
+RUN gem install excon
 
 ADD usr/local/etc/haproxy.cfg.erb /usr/local/etc/haproxy.cfg.erb
 ADD usr/local/bin/start.rb /usr/local/bin/start.rb

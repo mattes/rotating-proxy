@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 require 'erb'
-require 'eventmachine'
+require 'excon'
 
 module Service
 
@@ -147,14 +147,6 @@ end
 
 h.start
 
-
-
-EM.run do
-  # EM.add_periodic_timer(10) do
-  #   # start another tor instance
-  # end
-
-  # ... 
-  # @todo tor auto start and close depending on memory size and cpu usage?
+loop do
+  sleep 3600
 end
-
