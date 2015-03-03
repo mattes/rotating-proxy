@@ -1,7 +1,7 @@
 global
   maxconn 1024 
   daemon
-  pidfile <%= @pidfile_path %>
+  pidfile <%= pid_file %>
 
 defaults
   mode http
@@ -31,7 +31,7 @@ defaults
 
 
 frontend rotating_proxies
-  bind *:<%= @port %>
+  bind *:<%= port %>
   default_backend tor
   option http_proxy
 
@@ -39,6 +39,6 @@ backend tor
   option http_proxy
   balance leastconn # http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#balance
 
-  <% @backends.each do |b| %>
+  <% backends.each do |b| %>
   server <%= b[:name] %><%= b[:port] %> <%= b[:addr] %>:<%= b[:port] %>
   <% end %>
