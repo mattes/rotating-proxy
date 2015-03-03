@@ -3,7 +3,7 @@ require 'erb'
 require 'excon'
 require 'logger'
 
-$logger = Logger.new(STDOUT, Logger::INFO)
+$logger = Logger.new(STDOUT, Logger::DEBUG)
 
 module Service
   class Base
@@ -14,7 +14,7 @@ module Service
     end
 
     def service_name
-      self.class.name.downcase
+      self.class.name.downcase.split('::').last
     end
 
     def start
@@ -56,6 +56,7 @@ module Service
     end
 
     def self.fire_and_forget(*args)
+      $logger.debug "running: #{args.join(' ')}"
       pid = Process.fork
       if pid.nil? then
         # In child
@@ -78,6 +79,10 @@ module Service
 
 
   class Tor < Base
+    def data_directory
+      "#{super}/#{pid}"
+    end
+
     def start
       super
       self.class.fire_and_forget(executable,
