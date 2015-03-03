@@ -46,7 +46,7 @@ module Service
       if File.exists?(pid_file)
         pid = File.read(pid_file).strip
         begin
-          self.class.kill(pid)
+          self.class.kill(pid.to_i)
         rescue => e
           $logger.warn "couldn't kill #{service_name} on port #{port}: #{e.message}"
         end
