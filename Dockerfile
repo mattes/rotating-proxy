@@ -1,13 +1,13 @@
-FROM ubuntu:12.04
+FROM ubuntu:14.04
 MAINTAINER Matthias Kadenbach <matthias.kadenbach@gmail.com>
 
 RUN apt-get update
-# RUN apt-get upgrade -y
+RUN apt-get upgrade -y
 RUN apt-get install libssl-dev wget curl ruby1.9.3 -y
 RUN ln -s /lib/x86_64-linux-gnu/libssl.so.1.0.0 /lib/libssl.so.1.0.0
 
 # Tor
-RUN echo 'deb http://deb.torproject.org/torproject.org precise main' | tee /etc/apt/sources.list.d/torproject.list
+RUN echo 'deb http://deb.torproject.org/torproject.org trusty main' | tee /etc/apt/sources.list.d/torproject.list
 RUN gpg --keyserver keys.gnupg.net --recv 886DDD89
 RUN gpg --export A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89 | apt-key add -
 RUN apt-get update
