@@ -131,7 +131,7 @@ module Service
     def initialize(id)
       @id = id
       @tor = Tor.new(tor_port)
-      @polipo = Polipo.new(polipo_port, tor_port: tor_port)
+      @polipo = Polipo.new(polipo_port, tor: tor)
     end
 
     def start
