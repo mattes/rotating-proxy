@@ -14,3 +14,5 @@ test:
 pull:
 	git pull origin master
 
+run:
+	docker run -d -p 5566:5566 --env tors=10 --env test_url="http://www.check24.de/" --name tor $(NAME):$(VERSION)
