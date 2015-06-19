@@ -14,20 +14,19 @@ defaults
   timeout server 60s
 
 
-# listen stats *:1936
-#   mode            http
-#   log             global
-#   maxconn 10
-#   clitimeout      100s
-#   srvtimeout      100s
-#   contimeout      100s
-#   timeout queue   100s
-#   stats enable
-#   stats hide-version
-#   stats refresh 30s
-#   stats show-node
-#   stats auth admin:admin123
-#   stats uri /haproxy?stats
+listen stats *:1936
+  mode            http
+  log             global
+  maxconn 10
+  clitimeout      100s
+  srvtimeout      100s
+  contimeout      100s
+  timeout queue   100s
+  stats enable
+  stats hide-version
+  stats refresh 30s
+  stats show-node
+  stats uri /haproxy?stats
 
 
 frontend rotating_proxies
