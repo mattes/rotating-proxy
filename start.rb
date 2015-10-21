@@ -109,6 +109,9 @@ module Service
     def start
       super
       # https://gitweb.torproject.org/torbrowser.git/blob_plain/1ffcd9dafb9dd76c3a29dd686e05a71a95599fb5:/build-scripts/config/polipo.conf
+      if File.exists?(pid_file)
+        File.delete(pid_file)
+      end
       self.class.fire_and_forget(executable,
         "proxyPort=#{port}",
         "socksParentProxy=127.0.0.1:#{tor_port}",
