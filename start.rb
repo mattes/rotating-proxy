@@ -101,13 +101,12 @@ module Service
 	"--ControlPort #{control_port}",
         "--NewCircuitPeriod 15",
 	"--MaxCircuitDirtiness 15",
-	"--NumEntryGuards 8",
+	"--UseEntryGuards 0",
+	"--UseEntryGuardsAsDirGuards 0",
 	"--CircuitBuildTimeout 5",
-	"--ExitNodes {us}",
 	"--ExitRelay 0",
 	"--RefuseUnknownExits 0",
 	"--ClientOnly 1",
-	"--StrictNodes 1",
 	"--AllowSingleHopCircuits 1",
         "--DataDirectory #{data_directory}",
         "--PidFile #{pid_file}",
@@ -119,7 +118,7 @@ module Service
     def newnym
         self.class.fire_and_forget('/usr/local/bin/newnym.sh',
 				   "#{control_port}",
-				   "| logger -t 'newnym' 2>&1")
+				   "| logger -t 'newnym'")
     end
   end
 
