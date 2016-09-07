@@ -21,6 +21,9 @@ RUN gem install excon -v 0.44.4
 ADD start.rb /usr/local/bin/start.rb
 RUN chmod +x /usr/local/bin/start.rb
 
+ADD newnym.sh /usr/local/bin/newnym.sh
+RUN chmod +x /usr/local/bin/newnym.sh
+
 ADD haproxy.cfg.erb /usr/local/etc/haproxy.cfg.erb
 
 EXPOSE 5566 1936
