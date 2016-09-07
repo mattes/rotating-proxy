@@ -97,25 +97,17 @@ module Service
     def start
       super
       self.class.fire_and_forget(executable,
-        # "CircuitPriorityHalflife",
-        # "ExcludeExitNodes",
-        # "ExitNodes",
-        # "ExcludeSingleHopRelays",
-        # "AllowSingleHopCircuits",
-        # "AllowSingleHopExits",
-
+        "--MaxCircuitDirtiness 60",
         "--SocksPort #{port}",
         "--ControlPort #{control_port}",
-        "--KeepalivePeriod 1000",
         "--NewCircuitPeriod 15",
-        "--MaxCircuitDirtiness 15",
         "--UseEntryGuards 0",
         "--UseEntryGuardsAsDirGuards 0",
-        "--CircuitBuildTimeout 5",
+        "--CircuitBuildTimeout 15",
         "--ExitRelay 0",
-        "--RefuseUnknownExits 0",
         "--ClientOnly 1",
         "--AllowSingleHopCircuits 1",
+        "--ExcludeSingleHopRelays 0",
         "--DataDirectory #{data_directory}",
         "--PidFile #{pid_file}",
         "--Log \"warn syslog\"",
@@ -208,7 +200,7 @@ module Service
     alias_method :port, :polipo_port
 
     def test_url
-      ENV['test_url'] || 'http://echoip.com'
+      ENV['test_url'] || 'https://www.linkedin.com/directory/people-a'
     end
 
     def working?
