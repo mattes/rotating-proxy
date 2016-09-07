@@ -97,8 +97,16 @@ module Service
     def start
       super
       self.class.fire_and_forget(executable,
+        # "CircuitPriorityHalflife",
+        # "ExcludeExitNodes",
+        # "ExitNodes",
+        # "ExcludeSingleHopRelays",
+        # "AllowSingleHopCircuits",
+        # "AllowSingleHopExits",
+
         "--SocksPort #{port}",
         "--ControlPort #{control_port}",
+        "--KeepalivePeriod 1000",
         "--NewCircuitPeriod 15",
         "--MaxCircuitDirtiness 15",
         "--UseEntryGuards 0",
