@@ -1,6 +1,8 @@
 docker-rotating-proxy
 =====================
 
+[![Docker Pulls](https://img.shields.io/docker/pulls/mattes/rotating-proxy.svg)]()
+
 ```
                Docker Container
                -------------------------------------
