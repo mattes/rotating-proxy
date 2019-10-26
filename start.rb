@@ -250,7 +250,7 @@ end
 haproxy = Service::Haproxy.new
 proxies = []
 
-tor_instances = ENV['tors'] || 10
+tor_instances = ENV['tors'] || 25
 tor_instances.to_i.times.each do |id|
   proxy = Service::Proxy.new(id)
   haproxy.add_backend(proxy)
