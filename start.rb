@@ -99,7 +99,6 @@ module Service
       self.class.fire_and_forget(executable,
         "--SocksPort #{port}",
         "--ControlPort #{control_port}",
-        "--ExitNodes US",
         "--NewCircuitPeriod 10",
 	    "--MaxCircuitDirtiness 120",
 	    "--UseEntryGuards 0",
