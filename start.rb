@@ -213,7 +213,7 @@ module Service
   class Haproxy < Base
     attr_reader :backends
 
-    def initialize(port = 5566)
+    def initialize(port = 5555)
       @config_erb_path = "/usr/local/etc/haproxy.cfg.erb"
       @config_path = "/usr/local/etc/haproxy.cfg"
       @backends = []
