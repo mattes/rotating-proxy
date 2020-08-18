@@ -47,15 +47,11 @@ Usage with make
 # start docker container
 make run
 
-# stop container
-make stop
-
-# remove container
-make rm
-
 # stop and remove container
 make remove
 ```
+
+See `Makefile` for full list of available shortcuts.
 
 Further Readings
 ----------------

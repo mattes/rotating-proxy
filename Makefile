@@ -7,6 +7,12 @@ run:
 ps:
 	docker ps -a | grep "${CONTAINER_NAME}"
 
+log:
+	docker logs ${CONTAINER_NAME}
+
+flog:
+	docker logs --follow ${CONTAINER_NAME}
+
 stop:
 	docker stop ${CONTAINER_NAME}
 
