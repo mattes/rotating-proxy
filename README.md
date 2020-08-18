@@ -35,6 +35,27 @@ curl --proxy 127.0.0.1:5566 http://header.jsontest.com
 http://127.0.0.1:4444/haproxy?stats
 ```
 
+Usage with make
+---------------
+
+1. Install `make` command line utility
+
+2. Copy `example.env` as `.env` and edit settings
+
+3. Use `make` commands
+```bash
+# start docker container
+make run
+
+# stop container
+make stop
+
+# remove container
+make rm
+
+# stop and remove container
+make remove
+```
 
 Further Readings
 ----------------
