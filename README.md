@@ -49,6 +49,9 @@ make run
 
 # stop and remove container
 make remove
+
+# Alternatively, using Docker Service
+make service
 ```
 
 See `Makefile` for full list of available shortcuts.
