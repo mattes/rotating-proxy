@@ -34,6 +34,26 @@ curl --proxy 127.0.0.1:5566 https://api.my-ip.io/ip
 http://127.0.0.1:4444/haproxy?stats
 ```
 
+Usage with make
+---------------
+
+1. Install `make` command line utility
+
+2. Copy `example.env` as `.env` and edit settings
+
+3. Use `make` commands
+```bash
+# start docker container
+make run
+
+# stop and remove container
+make remove
+
+# Alternatively, using Docker Service
+make service
+```
+
+See `Makefile` for full list of available shortcuts.
 
 Further Readings
 ----------------
