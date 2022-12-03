@@ -14,14 +14,15 @@ defaults
   timeout server 60s
 
 
-listen stats *:4444
+listen stats
+  bind *:4444
   mode            http
   log             global
   maxconn 10
-  clitimeout      100s
-  srvtimeout      100s
-  contimeout      100s
-  timeout queue   100s
+  timeout client      100s
+  timeout server      100s
+  timeout connect     100s
+  timeout queue       100s
   stats enable
   stats hide-version
   stats refresh 30s
@@ -35,7 +36,6 @@ frontend rotating_proxies
   option http_proxy
 
 backend tor
-  option http_proxy
   balance leastconn # http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#balance
 
   <% backends.each do |b| %>
