@@ -1,0 +1,5 @@
+ignored:
+  # Alpine prunes superseded packages from its index, so exact `pkg=version`
+  # pins break the build whenever a security update is published. Versions are
+  # pinned to the Alpine release branch via the digest-pinned base image instead.
+  - DL3018

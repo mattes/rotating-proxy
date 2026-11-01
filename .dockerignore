@@ -1,0 +1,7 @@
+# Allow-list: only what the image needs reaches the build context.
+*
+!Dockerfile
+!tor_proxy.rb
+!start.rb
+!healthcheck.rb
+!haproxy.cfg.erb

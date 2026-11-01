@@ -1,0 +1,12 @@
+version: 2
+updates:
+  # Bumps the digest-pinned base image in the Dockerfile.
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+  # Bumps the SHA-pinned actions in .github/workflows.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

@@ -1,0 +1,69 @@
+# Hardened deployment. `docker compose up -d` works as-is: SOCKS5 on
+# 127.0.0.1:9050, no stats page, ten Tor clients. Copy .env.example to .env
+# to change anything; every variable below has a working default.
+services:
+  tor-proxy:
+    # Built from this checkout on every `up`. To run the published image
+    # instead, delete `build` and `pull_policy`.
+    build: .
+    pull_policy: build
+    image: shaddysignal/tor-rotating-proxy:latest
+    restart: unless-stopped
+    environment:
+      TORS: ${TORS:-10}
+      ROTATE_INTERVAL: ${ROTATE_INTERVAL:-600}
+      TEST_HOST: ${TEST_HOST:-}
+      LOG_CONNECTIONS: ${LOG_CONNECTIONS:-false}
+      MAX_CONNS_PER_SOURCE: ${MAX_CONNS_PER_SOURCE:-}
+      TOR_EXTRA_ARGS: ${TOR_EXTRA_ARGS:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      # Credentials arrive as a secret file, never as an environment variable,
+      # so they show up in neither `docker inspect` nor the process environment.
+      STATS_AUTH_FILE: /run/secrets/stats_auth
+    secrets:
+      - stats_auth
+    # Compose decides whether to recreate a container from a hash of the
+    # service definition, which does not include a secret's source path.
+    # Carrying the path here makes `up -d` react when STATS_AUTH_SECRET changes.
+    labels:
+      tor-rotating-proxy.stats-secret: ${STATS_AUTH_SECRET:-}
+    ports:
+      # Loopback only. A SOCKS proxy reachable from other hosts is an open
+      # relay for everyone who can reach it; put it behind a VPN or firewall
+      # rules before setting BIND_ADDRESS=0.0.0.0.
+      - "${BIND_ADDRESS:-127.0.0.1}:${SOCKS_PORT:-9050}:9050"
+      # Nothing listens here unless STATS_AUTH_SECRET is set (see .env.example).
+      - "${BIND_ADDRESS:-127.0.0.1}:${STATS_PORT:-4444}:4444"
+    # Root filesystem is immutable; only these two paths are writable, in RAM.
+    read_only: true
+    tmpfs:
+      # Tor state (consensus, descriptors, guards). Roughly 20-40 MB per instance.
+      - /var/lib/tor:mode=0700,uid=10001,gid=10001,size=512m
+      # Control sockets and the rendered haproxy.cfg.
+      - /run/tor-proxy:mode=0700,uid=10001,gid=10001,size=8m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    # Each Tor instance runs a handful of threads; raise this with TORS.
+    pids_limit: 512
+    # Bound what the host retains. Logs hold no client activity by default,
+    # but they still describe this deployment; keep them short-lived.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    # Budget roughly 60 MB per Tor instance plus 50 MB for everything else.
+    # deploy:
+    #   resources:
+    #     limits:
+    #       memory: 1g
+
+secrets:
+  stats_auth:
+    # Host path of a one-line "user:password" file. Unset means no stats page:
+    # /dev/null mounts as an empty secret and the page is simply not served.
+    # The container reads it as uid 10001, so the file must be readable by
+    # that uid (chmod 0644 is fine for a file inside a 0700 directory).
+    file: ${STATS_AUTH_SECRET:-/dev/null}

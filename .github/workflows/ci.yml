@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  schedule:
+    # Weekly rebuild and scan so newly published CVEs in the base image surface
+    # even when nothing in this repository changes.
+    - cron: '17 6 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: hadolint
+        uses: hadolint/hadolint-action@06be81baf89a55ffd0e24b8f04a4185738dd3387 # v3.5.0
+        with:
+          dockerfile: Dockerfile
+      - name: Ruby syntax
+        run: ruby -wc tor_proxy.rb start.rb healthcheck.rb
+
+  build:
+    name: Build, scan and smoke test
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Build image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          load: true
+          push: false
+          tags: tor-rotating-proxy:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan for vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: tor-rotating-proxy:ci
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '1'
+
+      - name: Start hardened container
+        run: |
+          docker run -d --name proxy \
+            --read-only --cap-drop ALL --security-opt no-new-privileges:true \
+            --tmpfs /var/lib/tor:mode=0700,uid=10001,gid=10001 \
+            --tmpfs /run/tor-proxy:mode=0700,uid=10001,gid=10001 \
+            -p 127.0.0.1:9050:9050 -e TORS=2 \
+            tor-rotating-proxy:ci
+
+      - name: Runs unprivileged and answers SOCKS5 (no Tor network needed)
+        run: |
+          sleep 5
+          docker exec proxy id
+          docker exec proxy id -u | grep -qx 10001
+          # A SOCKS5 greeting must be answered with "05 00" (no auth required).
+          reply=$(python3 -c 'import socket; s = socket.create_connection(("127.0.0.1", 9050), 5); s.sendall(b"\x05\x01\x00"); print(s.recv(2).hex())')
+          echo "reply: ${reply}"
+          test "${reply}" = "0500"
+          # An HTTP probe must get nothing back (Tor's own answer would name Tor).
+          probe=$(python3 -c 'import socket; s = socket.create_connection(("127.0.0.1", 9050), 5); s.sendall(b"GET / HTTP/1.0\r\n\r\n"); s.settimeout(8); print(repr(s.recv(100)))' 2>&1 || true)
+          echo "http probe: ${probe}"
+          case "${probe}" in *"b''"*|*"reset"*|*"Connection reset"*) ;; *) echo "probe leaked data"; exit 1;; esac
+
+      - name: End-to-end through the Tor network (best effort)
+        # Tor reachability from CI runners varies; a failure here is informational.
+        continue-on-error: true
+        run: |
+          for _ in $(seq 1 36); do
+            status=$(docker inspect -f '{{.State.Health.Status}}' proxy)
+            [ "$status" = healthy ] && break
+            sleep 5
+          done
+          docker inspect -f '{{.State.Health.Status}}: {{(index .State.Health.Log 0).Output}}' proxy
+          curl -sS --max-time 60 --socks5-hostname 127.0.0.1:9050 https://check.torproject.org/api/ip
+
+      - name: Container logs
+        if: always()
+        run: docker logs proxy
+
+      - name: Stops within the grace period
+        run: |
+          start=$(date +%s)
+          docker stop proxy
+          took=$(( $(date +%s) - start ))
+          echo "stopped in ${took}s"
+          test "${took}" -lt 10

@@ -1,42 +1,82 @@
+# HAProxy configuration template. start.rb renders it to $RUNTIME_DIR/haproxy.cfg
+# at container start; edit this file, not the rendered copy.
+
 global
-  maxconn 1024
-  daemon
-  pidfile <%= pid_file %>
+  log     stdout format raw daemon
+  maxconn <%= maxconn %>
+  # No "daemon": the process is supervised by start.rb and must stay in the
+  # foreground. No "pidfile", "chroot" or "user": we already run unprivileged.
 
 defaults
-  mode    http
-  maxconn 1024
-  option  httplog
+  log     global
+  mode    tcp
   option  dontlognull
   retries 3
   timeout connect 10s
-  timeout client 1200s
-  timeout server 1200s
+  timeout client  1200s
+  timeout server  1200s
 
-listen stats
-  bind            *:4444
-  mode            http
-  log             global
-  maxconn         10
-  timeout queue   100s
-  stats           enable
-  stats           hide-version
-  stats           refresh 30s
-  stats           show-node
-  stats           uri /haproxy?stats
-
-
-frontend entry-point
+frontend socks5
   bind            *:<%= port %>
-  mode            tcp
+<% if log_connections -%>
   option          tcplog
+<% else -%>
+  # Client connections are not logged: no source addresses, no timing, no
+  # byte counts. LOG_CONNECTIONS=true turns this on.
+  no log
+<% end -%>
+<% if max_conns_per_source -%>
+  # At most <%= max_conns_per_source %> concurrent connections per source address.
+  stick-table     type ip size 100k expire 30m store conn_cur
+  tcp-request     connection track-sc0 src
+  tcp-request     connection reject if { sc_conn_cur(0) gt <%= max_conns_per_source %> }
+<% end -%>
+  # Admit only connections whose first byte is a SOCKS5 version marker.
+  # HTTP, SOCKS4 and TLS probes and idle connections are closed without a
+  # reply, so Tor's "This is a SOCKS Proxy" page and its SOCKS4 error replies
+  # never reach whoever is probing.
+  tcp-request     inspect-delay 5s
+  tcp-request     content accept if { req.payload(0,1) -m bin 05 }
+  tcp-request     content reject
   default_backend tor
 
 backend tor
-  mode tcp
-  option tcplog
-  balance leastconn # http://cbonte.github.io/haproxy-dconv/configuration-1.5.html#balance
+  balance leastconn
+  # Take an instance out of rotation as soon as it stops answering a SOCKS5
+  # greeting (dead, restarting, or wedged). This check is local and cheap;
+  # the supervisor separately verifies circuits and restarts instances.
+  option  tcp-check
+  tcp-check send-binary 050100
+  tcp-check expect binary 0500
+  default-server check inter 10s fall 3 rise 2
+<% backends.each do |backend| -%>
+  server <%= backend[:name] %> <%= backend[:addr] %>:<%= backend[:port] %>
+<% end -%>
+<% if stats_user -%>
 
-  <% backends.each do |b| %>
-  server <%= b[:name] %><%= b[:port] %> <%= b[:addr] %>:<%= b[:port] %>
-  <% end %>
+# Stats page: only rendered when credentials were supplied. The password is
+# stored as a SHA-512 crypt hash; the clear text never touches this file.
+userlist stats-users
+  user <%= stats_user %> password <%= stats_password_hash %>
+
+listen stats
+  bind            *:<%= stats_port %>
+  mode            http
+  option          httplog
+  maxconn         10
+  timeout client  30s
+  timeout http-request 10s
+  # Throttle brute force: more than 10 failed requests per minute from one
+  # address gets 429s for the rest of that minute.
+  stick-table     type ip size 10k expire 10m store http_err_rate(1m)
+  http-request    track-sc0 src
+  http-request    deny deny_status 429 if { sc_http_err_rate(0) gt 10 }
+  # Anything but the stats path is a plain 404, authenticated or not.
+  http-request    deny deny_status 404 unless { path /haproxy }
+  http-request    auth realm restricted unless { http_auth(stats-users) }
+  http-after-response set-header Cache-Control no-store
+  stats           enable
+  stats           hide-version
+  stats           refresh 30s
+  stats           uri /haproxy?stats
+<% end -%>
